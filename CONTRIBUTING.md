@@ -4,9 +4,18 @@
 
 # Contributing Rulesets
 
+A note on terminology:
+
+- `rule`: a specific regex rewrite that is applied for all matching `target`s within the same `ruleset`.  There may be many `rule`s within any given `ruleset`.
+- `target`: a FQDN which may include a wildcard specified by `*.` on the left side, which `rule`s are applied to.  There may be many `target`s within any given `ruleset`.
+- `test`: a URL for which a request is made to ensure that the rewrite is working properly.  There may be many `test`s within any givin `ruleset`.
+- `ruleset`: a scope in which `rule`s, `target`s, and `test`s are contained.  `ruleset`s usually are named after the entity which controls the group of `target`s contained in it.  There is one `ruleset` per file within the `src/chrome/content/rules` directory.
+
 ## General Info
 
-If you want to create new rules to submit to us, we expect them to be in the `src/chrome/content/rules` directory. That directory also contains a useful script, `make-trivial-rule`, to create a simple rule for a specified domain. There is also a script called `utils/trivial-validate.py`, to check all the pending rules for several common errors and oversights. For example, if you wanted to make a rule for the `example.com` domain, you could run:
+We encourage potential contributors to look for broken `ruleset`s and try to fix them before creating new `ruleset`s.
+
+If you want to create new `ruleset`s to submit to us, we expect them to be in the `src/chrome/content/rules` directory. That directory also contains a useful script, `make-trivial-rule`, to create a simple `ruleset` for a specified domain. There is also a script called `utils/trivial-validate.py`, to check all the pending `ruleset`s for several common errors and oversights. For example, if you wanted to make a `ruleset` for the `example.com` domain, you could run:
 ```
 cd src/chrome/content/rules
 bash ./make-trivial-rule example.com
@@ -14,7 +23,6 @@ bash ./make-trivial-rule example.com
 This would create `Example.com.xml`, which you could then take a look at and edit based on your knowledge of any specific URLs at `example.com` that do or don't work in HTTPS. Please have a look at our [Ruleset Style Guide](https://github.com/EFForg/https-everywhere/blob/master/ruleset-style.md) where you can find useful tips about finding more subdomains. Our goal is to have as many subdomains covered as we can find.
 
 ## Minimum Requirements for a Ruleset PR
-
 
 Try to enumerate as many domains as posible...
 Your commit may be squashed and merged...
