@@ -36,17 +36,46 @@ Try fixing rulesets first instead of contributing new ones...
 
 ## Ruleset Style Guide
 
-TODO: This needs to be merged with the styleguide in #7707 in some sensible way
+### Motivation
 
-Goal: rules should be written in a way that is consistent, easy for humans to read and debug, reduces the chance of errors, and makes testing easy.
+Rules should be written in a way that is consistent, easy for humans to read and debug, reduces the chance of errors, and makes testing easy.
 
 To that end, here are some style guidelines for writing or modifying rulesets. They are intended to help and simplify in places where choices are ambiguous, but like all guidelines they can be broken if the circumstances require it.
 
-Avoid using the left-wildcard (`<target host='*.example.com' />`) unless you intend to rewrite all or nearly all subdomains.  Many rules today specify a left-wildcard target, but the rewrite rules only rewrite an explicit list of hostnames.
+### Wildcards in Targets
+
+#### Left-Wildcards
+
+Avoid using the left-wildcard (`<target host='*.example.com' />`) unless you intend to rewrite all or nearly all subdomains.  If it can be demonstrated that there is comprehensive HTTPS coverage for subdomains, left-wildcards may be appropriate.  Many rules today specify a left-wildcard target, but the rewrite rules only rewrite an explicit list of hostnames.
 
 Instead, prefer listing explicit target hosts and a single rewrite from `"^http:"` to `"^https:"`. This saves you time as a ruleset author because each explicit target host automatically creates an implicit test URL, reducing the need to add your own test URLs. These also make it easier for someone reading the ruleset to figure out which subdomains are covered.
 
-If you know all subdomains of a given domain support HTTPS, go ahead and use a left-wildcard, along with a plain rewrite from `"^http:"` to `"^https:"`. Make sure to add a bunch of test URLs for the more important subdomains. If you're not sure what subdomains might exist, you can install the `Sublist3r` tool:
+If you know all subdomains of a given domain support HTTPS, go ahead and use a left-wildcard, along with a plain rewrite from `"^http:"` to `"^https:"`. Make sure to add a bunch of test URLs for the more important subdomains. 
+
+#### Edge-Case: Right-Wildcards
+
+Right-wildcards (`<target host='account.google.*' />`) are highly discouraged.  Only use them in edge-cases where other solutions are unruly.
+
+Example:
+
+* Complicated rulesets like [`Google.tld_Subdomains.xml`](https://github.com/EFForg/https-everywhere/blob/cb03ac8418a773a309d605231a15a702fce96ce9/src/chrome/content/rules/Google.tld_Subdomains.xml)
+
+Where they must be used, please add a comment to the `ruleset` explaining why.
+
+### Complicated Regex in Rules
+
+Avoid regexes with long strings of subdomains, e.g. `<rule from="^http://(foo|bar|baz|bananas).example.com" />`. These are hard to read and maintain, and are usually better expressed with a longer list of target hosts, plus a plain rewrite from `"^http:"` to `"^https:"`.
+
+In general, avoid using open-ended regex in rules.  In certain cases, open-ended regex may be the most elegant solution.  But carefully consider if there are other options.
+
+Examples:
+
+* Rulesets with a lot of domains that we can catch with a simple regex that would be tedious and error-prone to list individually, like [`360.cn.xml`](https://github.com/EFForg/https-everywhere/blob/9698e64a2de7cf37509ab13ba9dcfd5bd4f84a95/src/chrome/content/rules/360.cn.xml#L98-L103)
+* CDNs with an arbitrarily large number of subdomains, like https://github.com/EFForg/https-everywhere/pull/7484#issuecomment-262852427 .
+
+### Enumerating Subdomains
+
+If you're not sure what subdomains might exist, you can install the `Sublist3r` tool:
 
     git clone https://github.com/aboul3la/Sublist3r.git
     cd Sublist3r
@@ -64,11 +93,73 @@ Alternatively, you can iteratively use Google queries and enumerate the list of 
 
 ... and so on.
 
+### Target Ordering
+
+In all cases where there is a list of domains, sort them in alphabetical order starting from the top level domain at the right reading left, moving ^ and www to the top of their group. For example:
+
+    example.com
+    www.example.com
+    a.example.com
+    www.a.example.com
+    b.a.example.com
+    b.example.com
+    example.net
+    www.example.net
+    a.example.net
+
+### Rule Ordering
+
 If there are a handful of tricky subdomains, but most subdomains can handle the plain rewrite from `"^http:"` to `"^https:"`, specify the rules for the tricky subdomains first, and then then plain rule last. Earlier rules will take precedence, and processing stops at the first matching rule. There may be a tiny performance hit for processing exception cases earlier in the ruleset and the common case last, but in most cases the performance issue is trumped by readability.
 
-Avoid regexes with long strings of subdomains, e.g. `<rule from="^http://(foo|bar|baz|bananas).example.com" />`. These are hard to read and maintain, and are usually better expressed with a longer list of target hosts, plus a plain rewrite from `"^http:"` to `"^https:"`.
+### Non-working hosts
 
-Prefer dashes over underscores in filenames. Dashes are easier to type.
+It is useful to list hosts that do not work in the comments of a `ruleset`.  This is a stylistic preference but is not strictly required.
+
+For easy reading, please avoid using UTF characters unless in the rare instances that they are part of the hostname itself.
+
+Example:
+```xml
+<!--
+        Invalid certificate:
+                8marta.glavbukh.ru
+                forum2.glavbukh.ru (incomplete certificate chain)
+
+        Redirect to HTTP:
+                8marta2013.glavbukh.ru
+                den.glavbukh.ru
+
+        Refused:
+                e.glavbukh.ru
+                www.e.glavbukh.ru
+
+        Time out:
+                psd.glavbukh.ru
+                str.glavbukh.ru
+
+-->
+```
+
+In most cases, the absence of a `2XX` or `3XX` endpoint indicates that a host should not be included in the set of `targets` and is non-working, *except* when it is clear that the site functions as intended in the absence of such an endpoint.
+
+### Ruleset Names
+
+For simple sites, the `ruleset` `name` attribute can be either a site description or the domain itself. For example, the [SeattleAquarium.org.xml](https://github.com/EFForg/https-everywhere/blob/30b7a0101d0bb8a492a0f089096bc162de07f778/src/chrome/content/rules/SeattleAquarium.org.xml) ruleset could have a `name` of `Seattle Aquarium`, `SeattleAquarium.org`, or `seattleaquarium.org`.
+
+If a `ruleset` covers multiple domains, then the `ruleset` `name` should reflect the broader organization, project, or concept for what a ruleset is trying to accomplish.
+
+Examples:
+
+* [`Google.xml`](https://github.com/EFForg/https-everywhere/blob/5.2.10/src/chrome/content/rules/Google.xml) is just named `Google`, and
+* [`Bitly.xml`](https://github.com/EFForg/https-everywhere/blob/5.2.10/src/chrome/content/rules/Bitly.xml) is named `bit.ly`, but
+* [`Bitly_branded_short_domains.xml`](https://raw.githubusercontent.com/EFForg/https-everywhere/5.2.10/src/chrome/content/rules/Bitly_branded_short_domains.xml) is named `Bitly vanity domains`
+
+#### Filenames
+
+Filenames should vaguely resemble the `name` so that someone looking for the file based on the `name` can find it easily. Filenames that start with a capital letter are preferred.  Prefer dashes over underscores in filenames. Dashes are easier to type.
+
+
+
+
 
 Use tabs and double quotes (`"`, not `'`).
 
@@ -111,13 +202,12 @@ test URLs:
 	<target host="images.whatwg.org" />
 	<target host="resources.whatwg.org" />
 	<target host="*.spec.whatwg.org" />
+		<test url="http://html.spec.whatwg.org/" />
+		<test url="http://fetch.spec.whatwg.org/" />
+		<test url="http://xhr.spec.whatwg.org/" />
+		<test url="http://dom.spec.whatwg.org/" />
 	<target host="wiki.whatwg.org" />
 	<target host="www.whatwg.org" />
-
-	<test url="http://html.spec.whatwg.org/" />
-	<test url="http://fetch.spec.whatwg.org/" />
-	<test url="http://xhr.spec.whatwg.org/" />
-	<test url="http://dom.spec.whatwg.org/" />
 
 	<rule from="^http:"
 		to="https:" />
