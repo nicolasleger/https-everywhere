@@ -1,5 +1,37 @@
+# General Note
+
+There are several main areas of development on HTTPS Everywhere: the core codebase, tests, utilities, and rulesets.
+
+The core codebase is divided into two separate extensions.  One is based on the `XPCOM` API used by Mozilla Firefox (soon to be deprecated, located in the `src` top-level path), and the other is based on the `WebExtensions` API (located in `chromium`), first developed in Google's Chromium browser.  This consists of the code performing redirects, the UI, logging, the decentralized SSL observatory code, and ruleset loading.  This is written in JavaScript.
+
+The utilities (`utils` top-level path) include scripts that build the extension, sanitize and perform normalization on rulesets, simlify rules, and help label GitHub issues.  Historically, these utilities have been written in Python.  Many of the newer utilities are written in JavaScript, and meant to be run in node.  Some of the wrappers for these utilities are in shell scripts.
+
+Tests are performed in headless browsers and located in the `test` top-level path.  These are written in Python, and some of the wrappers for thesee tests are in shell scripts.
+
+The rulesets can be found in the `rules` top-level path include all the rules for redirecting individual sites to HTTPS.  These are written in XML.
+
+## Submitting Changes
+
+To submit changes, open a pull request from our [GitHub repository](https://github.com/efforg/https-everywhere).
+
+HTTPS Everywhere is maintained by a limited set of staff and volunteers.  Please be mindful that we may take a while before we're able to review your contributions.
+
+* * *
+
 # Contributing Code
 
+We encourage code contributions to HTTPS Everywhere.  There are a few considerations to keep in mind when contributing code.
+
+Officially supported browsers:
+
+- Firefox Stable
+- Firefox ESR
+- Firefox Dev
+- Chromium Stable
+
+We also informally support Opera browser, but do not have tooling around testing Opera.  Firefox ESR is supported because this is what the Tor Browser, which includes HTTPS Everywhere, is built upon.  For the test commands, refer to [README.md](README.md).
+
+Several of our utilities and our full test suite is written in Python.  Eventually we would like the whole codebase to be standardized as JavaScript.  If you are so inclined, it would be helpful to rewrite the tooling and tests into JavaScript while maintaining the functionality.
 
 * * *
 
@@ -18,6 +50,16 @@ Thanks for your interest in contributing to the HTTPS Everywhere `rulesets`!  Th
 
 HTTPS Everywhere includes tens of thousands of `rulesets`.  Any one of these sites can change their HTTPS configuration at any time, so keeping HTTPS Everywhere usable is a task that requires constant maintenance.  At the same time, HTTPS deployment on the web is becoming more and more widespread, thanks to projects like [Let's Encrypt](https://letsencrypt.org/).  This is a very good thing, as it means the web is becoming a safer place!  However, with each new `ruleset` that HTTPS Everywhere includes comes with an increase in both download size upon install and memory usage at runtime.  Rather than adding new `rulesets`, we encourage potential contributors to look for broken `rulesets` and try to fix them first.
 
+Some `rulesets` have the attribute `platform="mixedcontent"`.  These `rulesets` cause problems in browsers that enable active mixed-content (loading insecure resources in a secure page) blocking.  When browsers started enforcing active mixed-content blocking, some sites started to break.  That's why we introduced this tag.  It is likely that many of these sites have fixed this historical problem, so we particularly encourage `ruleset` contributors to fix these `rulesets` first:
+
+    git grep -i mixedcontent src/chrome/content/rules
+
+## Testing
+
+A general workflow for testing sites that provide both HTTP and HTTPS follows.  Open a version of the browser of your choice without HTTPS Everywhere loaded to the HTTP endpoint, alongside the browser with the latest code and rulesets for HTTPS Everywhere loaded to the HTTPS endpoint (as described in [README.md](README.md).)  Click around and compare the look and functionality of both sites.
+
+If something fails to load or looks strange, you may be able to debug the problem by opening the network tab of your browser debugging tool.  Modify the `ruleset` until you get it in a good state - you'll have to re-run the HTTPS Everywhere-equipped browser upon each change.
+
 ## New Rulesets
 
 If you want to create new `rulesets` to submit to us, we expect them to be in the s`rc/chrome/content/rules` directory. That directory also contains a useful script, `make-trivial-rule`, to create a simple `ruleset` for a specified domain. There is also a script called `utils/trivial-validate.py`, to check all the pending `rulesets` for several common errors and oversights. For example, if you wanted to make a `ruleset` for the `example.com` domain, you could run:
@@ -25,14 +67,15 @@ If you want to create new `rulesets` to submit to us, we expect them to be in th
 cd src/chrome/content/rules
 bash ./make-trivial-rule example.com
 ```
-This would create `Example.com.xml`, which you could then take a look at and edit based on your knowledge of any specific URLs at `example.com` that do or don't work in HTTPS. Please have a look at our [Ruleset Style Guide](https://github.com/EFForg/https-everywhere/blob/master/ruleset-style.md) where you can find useful tips about finding more subdomains. Our goal is to have as many subdomains covered as we can find.
+This would create `Example.com.xml`, which you could then take a look at and edit based on your knowledge of any specific URLs at `example.com` that do or don't work in HTTPS. Please have a look at our Ruleset Style Guide below, where you can find useful tips about finding more subdomains. Our goal is to have as many subdomains covered as we can find.
 
 ## Minimum Requirements for a Ruleset PR
 
-Try to enumerate as many domains as posible...
-Your commit may be squashed and merged...
-Indent exclusions and tests to the target....
-Try fixing rulesets first instead of contributing new ones...
+There are several volunteers to HTTPS Everywhere who have graciously dedicated their time to look at the `ruleset` contributions and work with contributors to ensure quality of the pull requests before merging.  It is typical for there to be several back-and-fourth communications with these `ruleset` maintainers before a PR is in a good shape to merge.  Please be patient and respectful, the maintainers are donating their time for no benefit other than the satisfaction of making the web more secure.  They are under no obligation to merge your request, and may reject it if it is impossible to ensure quality.
+
+In the back-and-fourth process of getting the `ruleset` in good shape, there may be many commits made.  It is this project's convention to squash-and-merge these commits into a single commit before merging into the project.  If your commits are cryptographically signed, we may ask you to squash the commits yourself in order to preserve this signature.  Otherwise, we may squash them ourselves before merging.
+
+We prefer small, granular changes to the rulesets.  Not only are these easier to test and review, this results in cleaner commits.
 
 ## Ruleset Style Guide
 
@@ -41,6 +84,14 @@ Try fixing rulesets first instead of contributing new ones...
 Rules should be written in a way that is consistent, easy for humans to read and debug, reduces the chance of errors, and makes testing easy.
 
 To that end, here are some style guidelines for writing or modifying rulesets. They are intended to help and simplify in places where choices are ambiguous, but like all guidelines they can be broken if the circumstances require it.
+
+### Indentation & Misc Stylistic Conventions
+
+Use tabs for indentation.  For `tests` and `exclusions`, place them under the `target` that they refer to, indented one additional layer.  See below for an example.
+
+We provide an `.editorconfig` file in the top-level path, which you can configure your editor of choice to use.  This will enforce proper indentation.
+
+Use double quotes (`"`, not `'`).
 
 ### Wildcards in Targets
 
@@ -157,11 +208,11 @@ Examples:
 
 Filenames should vaguely resemble the `name` so that someone looking for the file based on the `name` can find it easily. Filenames that start with a capital letter are preferred.  Prefer dashes over underscores in filenames. Dashes are easier to type.
 
+### Cross-referencing Rulesets
 
+This sort of comment: `For other Migros coverage, see Migros.xml.` is definitely appropriate, in both directions.
 
-
-
-Use tabs and double quotes (`"`, not `'`).
+### Regex Conventions
 
 When matching an arbitrary DNS label (a single component of a hostname), prefer `([\w-]+)` for a single label (i.e. www), or `([\w.-]+)` for multiple labels (i.e. www.beta). Avoid more visually complicated options like `([^/:@\.]+\.)?`.
 
@@ -177,9 +228,11 @@ Avoid the negative lookahead operator `?!`. This is almost always better express
 
 Prefer capturing groups `(www\.)?` over non-capturing `(?:www\.)?`. The non-capturing form adds extra line noise that makes rules harder to read. Generally you can achieve the same effect by choosing a correspondingly higher index for your replacement group to account for the groups you don't care about.
 
+### Snapping Redirects
+
 Avoid snapping redirects. For instance, if https://foo.fm serves HTTPS correctly, but redirects to https://foo.com, it's tempting to rewrite foo.fm to foo.com, to save users the latency of the redirect. However, such rulesets are less obviously correct and require more scrutiny. And the redirect can go out of date and cause problems. HTTPS Everywhere rulesets should change requests the minimum amount necessary to ensure a secure connection.
 
-Here is an example ruleset pre-style guidelines:
+### Example: Ruleset before style guidelines are applied
 
 ```xml
 <ruleset name="WHATWG.org">
@@ -191,8 +244,7 @@ Here is an example ruleset pre-style guidelines:
 </ruleset>
 ```
 
-Here is how you could rewrite it according to these style guidelines, including
-test URLs:
+### Example: Ruleset after style guidelines are applied, with test URLs
 
 ```xml
 <ruleset name="WHATWG.org">
@@ -251,5 +303,8 @@ and choose "Translate now" to enter the translation interface.
 
 * * *
 
-A more detailed guide about the syntax can be found at [EFF.org](https://www.eff.org/https-everywhere/rulesets).
+# More Info
+
+We have two publicly-archived mailing lists: the https-everywhere list (https://lists.eff.org/mailman/listinfo/https-everywhere) is for discussing the project as a whole, and the https-everywhere-rulesets list (https://lists.eff.org/mailman/listinfo/https-everywhere-rules) is for discussing the rulesets and their contents, including patches and git pull requests.
+
 For questions see our [FAQ](https://www.eff.org/https-everywhere/faq) page.
