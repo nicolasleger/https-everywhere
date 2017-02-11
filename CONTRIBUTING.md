@@ -2,13 +2,13 @@
 
 There are several main areas of development on HTTPS Everywhere: the core codebase, tests, utilities, and rulesets.
 
-The core codebase is divided into two separate extensions.  One is based on the `XPCOM` API used by Mozilla Firefox (soon to be deprecated, located in the `src` top-level path), and the other is based on the `WebExtensions` API (located in `chromium`), first developed in Google's Chromium browser.  This consists of the code performing redirects, the UI, logging, the decentralized SSL observatory code, and ruleset loading.  This is written in JavaScript.
+The core codebase is divided into two separate extensions.  One is based on the `XPCOM` API used by Mozilla Firefox (soon to be deprecated, located in the [`src`](src) top-level path), and the other is based on the `WebExtensions` API (located in [`chromium`](chromium)), first developed in Google's Chromium browser.  This consists of the code performing redirects, the UI, logging, the decentralized SSL observatory code, and ruleset loading.  This is written in JavaScript.
 
-The utilities (`utils` top-level path) include scripts that build the extension, sanitize and perform normalization on rulesets, simplify rules, and help label GitHub issues.  Historically, these utilities have been written in Python.  Many of the newer utilities are written in JavaScript, and meant to be run in node.  Some of the wrappers for these utilities are in shell scripts.
+The utilities ([`utils`](utils) top-level path) include scripts that build the extension, sanitize and perform normalization on rulesets, simplify rules, and help label GitHub issues.  Historically, these utilities have been written in Python.  Many of the newer utilities are written in JavaScript, and meant to be run in node.  Some of the wrappers for these utilities are in shell scripts.
 
-Tests are performed in headless browsers and located in the `test` top-level path.  These are written in Python, and some of the wrappers for these tests are in shell scripts.
+Tests are performed in headless browsers and located in the [`test`](test) top-level path.  These are written in Python, and some of the wrappers for these tests are in shell scripts.
 
-The rulesets can be found in the `rules` top-level path include all the rules for redirecting individual sites to HTTPS.  These are written in XML.
+The rulesets can be found in the [`rules`](rules) top-level path include all the rules for redirecting individual sites to HTTPS.  These are written in XML.
 
 ## Submitting Changes
 
@@ -89,7 +89,7 @@ To that end, here are some style guidelines for writing or modifying rulesets. T
 
 Use tabs for indentation.  For `tests` and `exclusions`, place them under the `target` that they refer to, indented one additional layer.  See below for an example.
 
-We provide an `.editorconfig` file in the top-level path, which you can configure your editor of choice to use.  This will enforce proper indentation.
+We provide an [`.editorconfig`](.editorconfig) file in the top-level path, which you can configure your editor of choice to use.  This will enforce proper indentation.
 
 Use double quotes (`"`, not `'`).
 
