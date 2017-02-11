@@ -4,9 +4,9 @@ There are several main areas of development on HTTPS Everywhere: the core codeba
 
 The core codebase is divided into two separate extensions.  One is based on the `XPCOM` API used by Mozilla Firefox (soon to be deprecated, located in the `src` top-level path), and the other is based on the `WebExtensions` API (located in `chromium`), first developed in Google's Chromium browser.  This consists of the code performing redirects, the UI, logging, the decentralized SSL observatory code, and ruleset loading.  This is written in JavaScript.
 
-The utilities (`utils` top-level path) include scripts that build the extension, sanitize and perform normalization on rulesets, simlify rules, and help label GitHub issues.  Historically, these utilities have been written in Python.  Many of the newer utilities are written in JavaScript, and meant to be run in node.  Some of the wrappers for these utilities are in shell scripts.
+The utilities (`utils` top-level path) include scripts that build the extension, sanitize and perform normalization on rulesets, simplify rules, and help label GitHub issues.  Historically, these utilities have been written in Python.  Many of the newer utilities are written in JavaScript, and meant to be run in node.  Some of the wrappers for these utilities are in shell scripts.
 
-Tests are performed in headless browsers and located in the `test` top-level path.  These are written in Python, and some of the wrappers for thesee tests are in shell scripts.
+Tests are performed in headless browsers and located in the `test` top-level path.  These are written in Python, and some of the wrappers for these tests are in shell scripts.
 
 The rulesets can be found in the `rules` top-level path include all the rules for redirecting individual sites to HTTPS.  These are written in XML.
 
@@ -41,8 +41,8 @@ A note on terminology:
 
 - `rule`: a specific regex rewrite that is applied for all matching `targets` within the same `ruleset`.  There may be many `rules` within any given `ruleset`.
 - `target`: a FQDN which may include a wildcard specified by `*.` on the left side, which `rules` are applied to.  There may be many `targets` within any given `ruleset`.
-- `test`: a URL for which a request is made to ensure that the rewrite is working properly.  There may be many `tests` within any givin `ruleset`.
-- `ruleset`: a scope in which `rules`, `targets`, and `tests` are contained.  `rulesets` usually are named after the entity which controls the group of `targets` contained in it.  There is one `ruleset` per file within the s`rc/chrome/content/rules` directory.
+- `test`: a URL for which a request is made to ensure that the rewrite is working properly.  There may be many `tests` within any given `ruleset`.
+- `ruleset`: a scope in which `rules`, `targets`, and `tests` are contained.  `rulesets` usually are named after the entity which controls the group of `targets` contained in it.  There is one `ruleset` per file within the `src/chrome/content/rules` directory.
 
 ## General Info
 
@@ -50,7 +50,7 @@ Thanks for your interest in contributing to the HTTPS Everywhere `rulesets`!  Th
 
 HTTPS Everywhere includes tens of thousands of `rulesets`.  Any one of these sites can change their HTTPS configuration at any time, so keeping HTTPS Everywhere usable is a task that requires constant maintenance.  At the same time, HTTPS deployment on the web is becoming more and more widespread, thanks to projects like [Let's Encrypt](https://letsencrypt.org/).  This is a very good thing, as it means the web is becoming a safer place!  However, with each new `ruleset` that HTTPS Everywhere includes comes with an increase in both download size upon install and memory usage at runtime.  Rather than adding new `rulesets`, we encourage potential contributors to look for broken `rulesets` and try to fix them first.
 
-Some `rulesets` have the attribute `platform="mixedcontent"`.  These `rulesets` cause problems in browsers that enable active mixed-content (loading insecure resources in a secure page) blocking.  When browsers started enforcing active mixed-content blocking, some sites started to break.  That's why we introduced this tag.  It is likely that many of these sites have fixed this historical problem, so we particularly encourage `ruleset` contributors to fix these `rulesets` first:
+Some `rulesets` have the attribute `platform="mixedcontent"`.  These `rulesets` cause problems in browsers that enable active mixed-content (loading insecure resources in a secure page) blocking.  When browsers started enforcing active mixed-content blocking, some HTTPS sites started to break.  That's why we introduced this tag - it disables those `rulesets` for sites blocking active mixed content.  It is likely that many of these sites have fixed this historical problem, so we particularly encourage `ruleset` contributors to fix these `rulesets` first:
 
     git grep -i mixedcontent src/chrome/content/rules
 
@@ -62,7 +62,7 @@ If something fails to load or looks strange, you may be able to debug the proble
 
 ## New Rulesets
 
-If you want to create new `rulesets` to submit to us, we expect them to be in the s`rc/chrome/content/rules` directory. That directory also contains a useful script, `make-trivial-rule`, to create a simple `ruleset` for a specified domain. There is also a script called `utils/trivial-validate.py`, to check all the pending `rulesets` for several common errors and oversights. For example, if you wanted to make a `ruleset` for the `example.com` domain, you could run:
+If you want to create new `rulesets` to submit to us, we expect them to be in the `src/chrome/content/rules` directory. That directory also contains a useful script, `make-trivial-rule`, to create a simple `ruleset` for a specified domain. There is also a script called `utils/trivial-validate.py`, to check all the pending `rulesets` for several common errors and oversights. For example, if you wanted to make a `ruleset` for the `example.com` domain, you could run:
 ```
 cd src/chrome/content/rules
 bash ./make-trivial-rule example.com
@@ -270,13 +270,13 @@ Avoid snapping redirects. For instance, if https://foo.fm serves HTTPS correctly
 
 ### Regular Rules
 
-It should be considered a sufficient condition for removal if a contributor can demonstrate that the TLS configuration for either a specific `target` or a ruleset altogether is unstable and/or breaking, or will be unstable and/or breaking in the near future.  It is, of course, preferrable that the `ruleset` be fixed rather than removed.
+It should be considered a sufficient condition for removal if a contributor can demonstrate that the TLS configuration for either a specific `target` or a ruleset altogether is unstable and/or breaking, or will be unstable and/or breaking in the near future.  It is, of course, preferable that the `ruleset` be fixed rather than removed.
 
 ### HSTS Preloaded Rules
 
 In `utils` we have a tool called `hsts-prune` which removes `targets` from rulesets if they are already contained in the [HSTS preload](https://hstspreload.org/) list for browsers that we support.  To be explicit, the script is an implementation of the following policy:
 
-> Let `included domain` denote either a `target`, or a parent of a `target`.  Let s`upported browsers` include the ESR, Dev, and Stable releases of Firefox, and the Stable release of Chromium.  If `included domain` is a parent of the `target`, the `included domain` must be present in the HSTS preload list for all s`upported browsers` with the relevant flag which denotes inclusion of subdomains set to `true`.  If `included domain` is the `target` itself, it must be included the HSTS preload list for all s`upported browsers`.  Additionally, if the http endpoint of the `target` exists, it must issue a 3XX redirect to the https endpoint for that target.  Additionally, the https endpoint for the `target` must deliver a `Strict-Transport-Security` header with the following directives present:
+> Let `included domain` denote either a `target`, or a parent of a `target`.  Let `supported browsers` include the ESR, Dev, and Stable releases of Firefox, and the Stable release of Chromium.  If `included domain` is a parent of the `target`, the `included domain` must be present in the HSTS preload list for all `supported browsers` with the relevant flag which denotes inclusion of subdomains set to `true`.  If `included domain` is the `target` itself, it must be included the HSTS preload list for all `supported browsers`.  Additionally, if the http endpoint of the `target` exists, it must issue a 3XX redirect to the https endpoint for that target.  Additionally, the https endpoint for the `target` must deliver a `Strict-Transport-Security` header with the following directives present:
 >
 > - `max-age` >= 10886400
 > - `includeSubDomains`
@@ -305,6 +305,6 @@ and choose "Translate now" to enter the translation interface.
 
 # More Info
 
-We have two publicly-archived mailing lists: the https-everywhere list (https://lists.eff.org/mailman/listinfo/https-everywhere) is for discussing the project as a whole, and the https-everywhere-rulesets list (https://lists.eff.org/mailman/listinfo/https-everywhere-rules) is for discussing the rulesets and their contents, including patches and git pull requests.
+We have two publicly-archived mailing lists: the https-everywhere list (https://lists.eff.org/mailman/listinfo/https-everywhere) is for discussing the project as a whole, and the https-everywhere-rulesets list (https://lists.eff.org/mailman/listinfo/https-everywhere-rules) is for discussing the `rulesets` and their contents, including patches and git pull requests.
 
 For questions see our [FAQ](https://www.eff.org/https-everywhere/faq) page.
