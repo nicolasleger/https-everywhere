@@ -1,0 +1,10 @@
+<ruleset name="star.fr">
+        <target host="star.fr" />
+        <target host="explore.star.fr" />
+
+        <rule from="^http://star\.fr/"
+                to="https://www.star.fr/" />
+
+        <rule from="^http:"
+                to="https:" />
+</ruleset>
